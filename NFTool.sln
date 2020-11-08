@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30611.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NavyReader", "NavyReader\NavyReader.csproj", "{B5A298D3-FC61-491F-81AE-E1A6AB90E01D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{04C046DF-CA20-439F-A681-5F51512B8212}"
+	ProjectSection(SolutionItems) = preProject
+		nuget.config = nuget.config
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{77698ABA-8CC8-40D9-8DDB-74052C8EAEE0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B5A298D3-FC61-491F-81AE-E1A6AB90E01D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5A298D3-FC61-491F-81AE-E1A6AB90E01D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5A298D3-FC61-491F-81AE-E1A6AB90E01D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5A298D3-FC61-491F-81AE-E1A6AB90E01D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77698ABA-8CC8-40D9-8DDB-74052C8EAEE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77698ABA-8CC8-40D9-8DDB-74052C8EAEE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77698ABA-8CC8-40D9-8DDB-74052C8EAEE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77698ABA-8CC8-40D9-8DDB-74052C8EAEE0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {94A73FD8-D86C-44B6-9609-CED6F27356DA}
+	EndGlobalSection
+EndGlobal

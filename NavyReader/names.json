@@ -1,0 +1,693 @@
+{
+  "Item1": {
+    "G잠재": "잠재",
+    "G명중": "명중",
+    "G연사": "연사",
+    "G어뢰": "어뢰",
+    "G수리": "수리",
+    "G기관": "기관",
+    "G함재": "함재",
+    "G대공": "대공",
+    "G보수": "보수",
+    "G전투": "전투",
+    "G폭격": "폭격"
+  },
+  "Item2": {
+    "G잠재": [
+      {
+        "Item1": 76,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 70,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 76,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 90,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 70,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 76,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 90,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 76,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 82,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 82,
+        "Item2": {
+          "value": 257
+        }
+      }
+    ],
+    "G명중": [
+      {
+        "Item1": 73,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 69,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 73,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 65,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 69,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 76,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 65,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 66,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 76,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 65,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 66,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 65,
+        "Item2": {
+          "value": 257
+        }
+      }
+    ],
+    "G연사": [
+      {
+        "Item1": 74,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 69,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 83,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 74,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 69,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 83,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 78,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 78,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 70,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 70,
+        "Item2": {
+          "value": 257
+        }
+      }
+    ],
+    "G어뢰": [
+      {
+        "Item1": 74,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 84,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 74,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 84,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 89,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 86,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 89,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 68,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 86,
+        "Item2": {
+          "value": 257
+        }
+      }
+    ],
+    "G수리": [
+      {
+        "Item1": 78,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 66,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 78,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 66,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 89,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 89,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 68,
+        "Item2": {
+          "value": 256
+        }
+      }
+    ],
+    "G기관": [
+      {
+        "Item1": 75,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 68,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 75,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 68,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 75,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 86,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 75,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 86,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 70,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 83,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 70,
+        "Item2": {
+          "value": 257
+        }
+      }
+    ],
+    "G함재": [
+      {
+        "Item1": 77,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 70,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 77,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 90,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 70,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 76,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 90,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 76,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 82,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 82,
+        "Item2": {
+          "value": 257
+        }
+      }
+    ],
+    "G대공": [
+      {
+        "Item1": 85,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 82,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 85,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 82,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 75,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 75,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 86,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 65,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 86,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 65,
+        "Item2": {
+          "value": 257
+        }
+      }
+    ],
+    "G보수": [
+      {
+        "Item1": 186,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 86,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 186,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 86,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 78,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 66,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 78,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 66,
+        "Item2": {
+          "value": 257
+        }
+      }
+    ],
+    "G전투": [
+      {
+        "Item1": 76,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 84,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 76,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 83,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 84,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 83,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 222,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 222,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 66,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 66,
+        "Item2": {
+          "value": 257
+        }
+      }
+    ],
+    "G폭격": [
+      {
+        "Item1": 80,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 86,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 80,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 88,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 86,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 75,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 88,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 75,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 69,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 69,
+        "Item2": {
+          "value": 257
+        }
+      },
+      {
+        "Item1": 88,
+        "Item2": {
+          "value": 256
+        }
+      },
+      {
+        "Item1": 88,
+        "Item2": {
+          "value": 257
+        }
+      }
+    ]
+  }
+}
