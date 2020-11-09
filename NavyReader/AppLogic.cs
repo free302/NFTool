@@ -135,11 +135,22 @@ namespace NFT.NavyReader
 
         GI _address;
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool SetCursorPos(int x, int y);
+        void SetCursor(int x, int y)
+        {
+            if (!SetCursorPos(x, y))
+            {
+                var error = Marshal.GetLastWin32Error();
+                log($"SetCursor() error: code= {error}");
+            }
+
+        }
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr OpenProcess(ProcessAccessFlags processAccess, bool bInheritHandle, int processId);
+
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out int lpNumberOfBytesRead);
         byte[] ReadProcessMemory(int address, int size)
@@ -231,8 +242,6 @@ namespace NFT.NavyReader
             saveSels();
             saveNames();
             loadExps();
-            var gs = (Groth[])Enum.GetValues(typeof(Groth));
-            foreach (var g in gs) if (g != Groth.None) _acts[g] = 9;
 
             Thread.Sleep(100);
             click(_newButton);
@@ -282,11 +291,12 @@ namespace NFT.NavyReader
         void click(Point clientPoint)
         {
             //Cursor.Position = new Point(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
-            //log($"cursor= ({Cursor.Position})");
-            //Thread.Sleep(100);
-            //SI.SendMouseLeft();
+            SetCursor(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
+            log($"cursor= ({Cursor.Position})");
+            Thread.Sleep(100);
+            SI.SendMouseLeft();
 
-            SI.SendMouseLeft(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
+            //SI.SendMouseLeft(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
         }
 
         StringBuilder _sb = new StringBuilder();
@@ -305,11 +315,10 @@ namespace NFT.NavyReader
                 //_sb.Append($"[{_runCounter,5}]");
                 //foreach (var n in nums) _sb.Append($"{n,03:D2}");
                 //log(_sb.ToString());
-
-                var isError = nums[0] > 15;
+                var isError = nums.Length != 11;
                 for (int i = 1; i < nums.Length; i++) isError |= (nums[i] > 12);
-
-                if (nums.Length != 11 || isError)
+                isError |= nums.Length > 0 && nums[0] > 15;
+                if (isError)
                 {
                     var time = DateTime.Now.ToString("HHmmss.f");
                     result.image.Save($"{time}_c.png", ImageFormat.Png);
