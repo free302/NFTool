@@ -35,11 +35,18 @@ namespace NFT.NavyReader
             ip.U.kir.Flags = isDown ? 0u : 0x02;
             return ip;
         }
+
         static INPUT buildInput(MOUSEEVENTF me)
+        {
+            return buildInput(me, (0, 0));
+        }
+        static INPUT buildInput(MOUSEEVENTF me, (int x, int y) coord)
         {
             var ip = new INPUT();
             ip.type = 0; // 1 = Keyboard Input
             ip.U.mi.dwFlags = me;
+            ip.U.mi.dx = coord.x;
+            ip.U.mi.dy = coord.y;
             return ip;
         }
 
@@ -65,11 +72,12 @@ namespace NFT.NavyReader
             //    Thread.Sleep(10);
             //}
         }
-        public static void SendMouseLeft()
+        public static void SendMouseLeft() => SendMouseLeft(0, 0);
+        public static void SendMouseLeft(int x, int y)
         {
             var inputs = new INPUT[2];
-            inputs[0] = buildInput(MOUSEEVENTF.LEFTDOWN);
-            inputs[1] = buildInput(MOUSEEVENTF.LEFTUP);
+            inputs[0] = buildInput(MOUSEEVENTF.LEFTDOWN, (x, y));
+            inputs[1] = buildInput(MOUSEEVENTF.LEFTUP, (x, y));
             SendInput((uint)inputs.Length, inputs, INPUT.Size);
         }
         public static void SendString2(string text)
@@ -88,6 +96,7 @@ namespace NFT.NavyReader
                 inputs[0] = ip;
                 SendInput(1, inputs, INPUT.Size);
                 Thread.Sleep(50);
+
                 ip.U.ki.dwFlags = KEYEVENTF.UNICODE | KEYEVENTF.KEYUP;
                 SendInput(1, inputs, INPUT.Size);
                 Thread.Sleep(50);

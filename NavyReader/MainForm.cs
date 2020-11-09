@@ -91,7 +91,7 @@ namespace NFT.NavyReader
                 }
                 if (e.Key == Keys.F5)
                 {
-                    saveSels();
+                    //saveSels();
                     _app.Test();
                 }
             }

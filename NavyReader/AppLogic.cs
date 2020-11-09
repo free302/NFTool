@@ -12,6 +12,9 @@ using NFT.NavyReader.ref1;
 using Newtonsoft.Json;
 using System.IO;
 using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+using System.Runtime.ConstrainedExecution;
+using System.Security;
 
 namespace NFT.NavyReader
 {
@@ -20,7 +23,7 @@ namespace NFT.NavyReader
     using KF = ValueTuple<Dictionary<Groth, string>, Dictionary<Groth, List<(Keys key, IntPtr wp)>>>;
     using GI = Dictionary<Groth, int>;
 
-    internal class AppLogic
+    internal class AppLogic : IDisposable
     {
         #region ---- UI ----
 
@@ -29,7 +32,7 @@ namespace NFT.NavyReader
         {
             _logger = logger;
             _acts = new GI();
-            _address = new GI();
+            _address = new GI() { { Groth.G잠재, 0x2D0ED0D0 } };
 
             loadNames();
             loadSels();
@@ -41,10 +44,6 @@ namespace NFT.NavyReader
 
 
         #region ---- Selection ----
-
-
-
-        #endregion
 
         static string _selFile = "sels.json";
         Dictionary<Groth, bool> _sels;
@@ -67,6 +66,8 @@ namespace NFT.NavyReader
             }
             else _sels = new Dictionary<Groth, bool>();
         }
+        #endregion
+
 
         #region ---- Expected ----
 
@@ -133,33 +134,45 @@ namespace NFT.NavyReader
         #region ---- Process PInvoke ----
 
         GI _address;
-        delegate IntPtr fOpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
-        delegate bool fReadProcessMemory(IntPtr hProcess, int lpBaseAddress, byte[] lpBuffer, int dwSize, out int lpNumberOfBytesRead);
-        //bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out IntPtr lpNumberOfBytesRead);
 
-        const int PROCESS_QUERY_INFORMATION = 0x0400;
-        const int MEM_COMMIT = 0x00001000;
-        const int PAGE_READWRITE = 0x04;
-        const int PROCESS_WM_READ = 0x0010;
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool SetCursorPos(int x, int y);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr OpenProcess(ProcessAccessFlags processAccess, bool bInheritHandle, int processId);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out int lpNumberOfBytesRead);
+        byte[] ReadProcessMemory(int address, int size)
+        {
+            byte[] buffer = new byte[size];
+            var ipAddress = new IntPtr(address);
+            var result = ReadProcessMemory(_handle, ipAddress, buffer, size, out var numBytes);
+            if (!result || numBytes != size) throw new Exception($"ReadProcessMemory() failed: result={result}, numBytes={numBytes}");
+            return buffer;
+        }
 
-        NativeLoader _loader;
-        fOpenProcess _fpOpen;
-        fReadProcessMemory _fpRead;
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
+        [SuppressUnmanagedCodeSecurity]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool CloseHandle(IntPtr hObject);
+
+
         Process _process;
         IntPtr _handle;
         public Process Process => _process;
         void initProcess()
         {
-            _loader = new NativeLoader("kernel32.dll");
-            _fpOpen = _loader.GetFunction<fOpenProcess>("OpenProcess");
-            _fpRead = _loader.GetFunction<fReadProcessMemory>("ReadProcessMemory");
-
             var appName = "NavyFIELD";
             _process = Process.GetProcessesByName(appName)[0];
-            _handle = _fpOpen(PROCESS_WM_READ, false, _process.Id);
-            log($"app= {appName}, handle= 0x{_handle:X}");
+            _handle = OpenProcess(ProcessAccessFlags.PROCESS_VM_READ, false, _process.Id);
+            log($"app= {appName}, process handle= 0x{_handle:X}, main window title= {_process.MainWindowTitle}");
         }
 
+        public void Dispose()
+        {
+            if (_handle != null) CloseHandle(_handle);
+        }
         public void SaveConfig()
         {
             saveSels();
@@ -241,7 +254,6 @@ namespace NFT.NavyReader
                 catch (Exception ex)
                 {
                     log(ex.Message);
-
                     //break;//*************************************************************************
                     SendKeys.SendWait("{ESC}");
                     click(_newButton);
@@ -269,10 +281,12 @@ namespace NFT.NavyReader
 
         void click(Point clientPoint)
         {
-            Cursor.Position = new Point(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
+            //Cursor.Position = new Point(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
             //log($"cursor= ({Cursor.Position})");
-            Thread.Sleep(100);
-            SI.SendMouseLeft();
+            //Thread.Sleep(100);
+            //SI.SendMouseLeft();
+
+            SI.SendMouseLeft(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
         }
 
         StringBuilder _sb = new StringBuilder();
@@ -287,37 +301,38 @@ namespace NFT.NavyReader
 
                 var nums = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(x => int.Parse(x)).ToArray();
 
-                _sb.Clear();
-                _sb.Append($"[{_runCounter,5}]");
-                foreach (var n in nums) _sb.Append($"{n,03:D2}");
-                log(_sb.ToString());
+                //_sb.Clear();
+                //_sb.Append($"[{_runCounter,5}]");
+                //foreach (var n in nums) _sb.Append($"{n,03:D2}");
+                //log(_sb.ToString());
 
-                var isError = false;
-                for (int i = 0; i < nums.Length; i++) isError |= (nums[i] > 15);
+                var isError = nums[0] > 15;
+                for (int i = 1; i < nums.Length; i++) isError |= (nums[i] > 12);
 
                 if (nums.Length != 11 || isError)
                 {
                     var time = DateTime.Now.ToString("HHmmss.f");
                     result.image.Save($"{time}_c.png", ImageFormat.Png);
                     result.imgBw.Save($"{time}_b.png", ImageFormat.Png);
-                    //foreach (var g in _acts.Keys) _acts[g] = 9;
-                    throw new Exception("OCR error");
+
+                    _sb.Clear();
+                    _sb.Append($"[{_runCounter,5}] OCR Error:");
+                    foreach (var n in nums) _sb.Append($"{n,03:D2}");
+                    throw new Exception(_sb.ToString());
                 }
                 else for (int i = 0; i < nums.Length; i++) _acts[(Groth)i] = nums[i];
             }
             //log("exiting read()...");
         }
-        void read_memory()
+        void readMemory()
         {
-            var buffer = new byte[4];
             foreach (var g in _address.Keys)
             {
-                var result = _fpRead(_handle, _address[g], buffer, buffer.Length, out int numRead);
-                if (result) _acts[g] = BitConverter.ToInt32(buffer, 0);
-                else log("_fpRead failed.");
+                var buffer = ReadProcessMemory(_address[g], 4);
+                _acts[g] = BitConverter.ToInt32(buffer, 0);
             }
         }
-        
+
         Groth check2()
         {
             //log("starting check2()... ");
@@ -337,14 +352,21 @@ namespace NFT.NavyReader
         void save(Groth g)
         {
             log($"saving {_nameText[g]} = {_acts[g]}");
+            _sb.Clear();
+            _sb.Append($"[{_runCounter,5}]");
+            foreach (var n in _acts.Values) _sb.Append($"{n,03:D2}");
+            log(_sb.ToString());
 
             var kp = new KeysPlayer(_nameKeys[g]);
             kp.Start();
             SendKeys.SendWait("{ENTER}");
         }
-        
+
         public void Test()
         {
+            readMemory();
+            return;
+
             saveSels();
             saveNames();
 
