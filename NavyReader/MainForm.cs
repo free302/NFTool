@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -67,7 +68,6 @@ namespace NFT.NavyReader
                 if (e.Key == Keys.F2)
                 {
                     splitContainer2.Panel2Collapsed = false;
-                    splitContainer2.SplitterDistance = 200;
                     _app.TestOcr(uiPicture, uiPicture2);
                 }
                 if (e.Key == Keys.F3)
@@ -84,7 +84,6 @@ namespace NFT.NavyReader
                 {
                     //WindowHelper.SetWindowPosition(_app.Process);
                     splitContainer2.Panel2Collapsed = false;
-                    splitContainer2.SplitterDistance = 200;
                     var fd = new OpenFileDialog();
                     fd.Filter = "Iamge|*.bmp;*.png;*.jpg";
                     if(fd.ShowDialog() == DialogResult.OK) _app.TestOcr2(fd.FileName, uiPicture, uiPicture2);
@@ -181,9 +180,12 @@ namespace NFT.NavyReader
 
         void log(object message = null)
         {
+            var msg = $"[{DateTime.Now:HHmmss.f}] {message}\n";
+            File.AppendAllText("log.txt", msg);
+
             invoke(() =>
             {
-                uiLog.AppendText($"[{DateTime.Now:HHmmss.f}] {message}\n");
+                uiLog.AppendText(msg);
                 uiLog.Refresh();
                 uiLog.SelectionStart = uiLog.TextLength;
                 uiLog.SelectionLength = 0;

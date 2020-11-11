@@ -203,6 +203,7 @@ namespace NFT.NavyReader
         Point _groth = new Point(435, 243);
         Ocr _ocr;
         static double _desktopRatio = 1.0;
+        int _blackLevel = 180;
         (int x, int y) _grothSize = (20, 150);
 
         volatile bool _running = false;
@@ -292,7 +293,7 @@ namespace NFT.NavyReader
         {
             //Cursor.Position = new Point(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
             SetCursor(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
-            log($"cursor= ({Cursor.Position})");
+            //log($"cursor= ({Cursor.Position})");
             Thread.Sleep(100);
             SI.SendMouseLeft();
 
@@ -304,8 +305,8 @@ namespace NFT.NavyReader
         {
             using (_ocr = new Ocr())
             {
-                var image = _ocr.Capture(_imgStart, _imgSize);
-                var result = _ocr.Process(image, 220);
+                var image = Ocr.Capture(_imgStart, _imgSize);
+                var result = _ocr.Process(image, _blackLevel);
                 var text = result.text.Trim().Replace(" ", "").Replace('\n', ' ');
                 //log($"[{_runCounter}] ocr: {text}");
 
@@ -325,7 +326,7 @@ namespace NFT.NavyReader
                     result.imgBw.Save($"{time}_b.png", ImageFormat.Png);
 
                     _sb.Clear();
-                    _sb.Append($"[{_runCounter,5}] OCR Error:");
+                    _sb.Append($"[{_runCounter,5}] OCR Error({nums.Length}):");
                     foreach (var n in nums) _sb.Append($"{n,03:D2}");
                     throw new Exception(_sb.ToString());
                 }
@@ -428,11 +429,11 @@ namespace NFT.NavyReader
             WindowHelper.BringMainWindowToFront(_process);
             _origin = WindowHelper.GetWindowPosition(_process);
             _imgStart = ((int)((_origin.X + _groth.X) * _desktopRatio), (int)((_origin.Y + _groth.Y) * _desktopRatio));
-            _imgSize = ((int)(20 * _desktopRatio), (int)(150 * _desktopRatio));
+            _imgSize = ((int)(_grothSize.x * _desktopRatio), (int)(_grothSize.y * _desktopRatio));
             Thread.Sleep(100);
 
             using var ocr = new Ocr();
-            var image = ocr.Capture(_imgStart, _imgSize);
+            var image = Ocr.Capture(_imgStart, _imgSize);
             testOcr(ocr, image, pbColor, pbBw);
         }
         public void TestOcr2(string fileName, PictureBox pbColor, PictureBox pbBw)
@@ -443,18 +444,28 @@ namespace NFT.NavyReader
         }
         void testOcr(Ocr ocr, Bitmap image, PictureBox imgColor, PictureBox imgBw)
         {
-            var result = ocr.Process(image, 220);
+            var result = ocr.Process(image, _blackLevel);
             imgColor.Image = result.image;
             imgBw.Image = result.imgBw;
-            log($"img= {result.image.Size}");
+            //log($"img= {result.image.Size} => {result.imgBw.Size}");
 
             var text = result.text.Trim().Replace(" ", "").Replace('\n', ' ');
-            log($"ocr: {text}");
+            //log($"ocr: {text}");
 
             var nums = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(x => int.Parse(x)).ToArray();
-            var sb = new StringBuilder();
-            foreach (var n in nums) sb.Append($"{n,03:D2}");
-            log(sb);
+
+            var isError = nums.Length != 11;
+            for (int i = 1; i < nums.Length; i++) isError |= (nums[i] > 12);
+            isError |= nums.Length > 0 && nums[0] > 15;
+
+            _sb.Clear();
+            _sb.Append($"[{_runCounter,5}] OCR {(isError?"ERROR":"OK")}({nums.Length}):");
+            foreach (var n in nums) _sb.Append($"{n,03:D2}");
+            log(_sb.ToString());
+
+            var time = DateTime.Now.ToString("HHmmss.f");
+            result.image.Save($"{time}_c.png", ImageFormat.Png);
+            result.imgBw.Save($"{time}_b.png", ImageFormat.Png);
         }
 
         #endregion

@@ -400,7 +400,7 @@
             this.splitContainer2.Panel2.Controls.Add(this.tableLayoutPanel1);
             this.splitContainer2.Panel2Collapsed = true;
             this.splitContainer2.Size = new System.Drawing.Size(562, 658);
-            this.splitContainer2.SplitterDistance = 449;
+            this.splitContainer2.SplitterDistance = 633;
             this.splitContainer2.TabIndex = 0;
             // 
             // uiLog
