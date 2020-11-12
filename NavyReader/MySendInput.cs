@@ -146,7 +146,7 @@ namespace NFT.NavyReader
     {
         public uint type;
         public InputUnion U;
-        public static int Size => Marshal.SizeOf(typeof(INPUT));
+        public static int Size = Marshal.SizeOf(typeof(INPUT));
     }
 
     // Declare the InputUnion struct

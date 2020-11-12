@@ -21,7 +21,8 @@ namespace NFT.NavyReader
     using SI = MySendInput;
     using KL = List<(Keys key, IntPtr wp)>;
     using KF = ValueTuple<Dictionary<Groth, string>, Dictionary<Groth, List<(Keys key, IntPtr wp)>>>;
-    using GI = Dictionary<Groth, int>;
+    using GV = Dictionary<Groth, int>;
+    using GA = Dictionary<Groth, long>;
 
     internal class AppLogic : IDisposable
     {
@@ -31,14 +32,26 @@ namespace NFT.NavyReader
         public AppLogic(Action<object> logger)
         {
             _logger = logger;
-            _acts = new GI();
-            _address = new GI() { { Groth.G잠재, 0x2D0ED0D0 } };
+            _acts = new GV();
 
+            loadAddress();
             loadNames();
             loadSels();
             initProcess();
         }
         void log(object msg) => _logger?.Invoke(msg);
+
+        public void SaveConfig()
+        {
+            saveSels();
+            saveExps();
+            saveNames();
+        }
+        public void Dispose()
+        {
+            _procLogic?.Dispose();
+        }
+
 
         #endregion
 
@@ -72,7 +85,7 @@ namespace NFT.NavyReader
         #region ---- Expected ----
 
         static string _expFile = "check.json";
-        Dictionary<Groth, (int priValue, GI secValue)> _exps;
+        Dictionary<Groth, (int priValue, GV secValue)> _exps;
         void saveExps()
         {
             log($"Saving exps: {_expFile}");
@@ -85,9 +98,9 @@ namespace NFT.NavyReader
             {
                 log($"Loading exps: {_expFile}");
                 var text = File.ReadAllText(_expFile);
-                _exps = JsonConvert.DeserializeObject<Dictionary<Groth, (int priValue, GI secValue)>>(text);
+                _exps = JsonConvert.DeserializeObject<Dictionary<Groth, (int priValue, GV secValue)>>(text);
             }
-            else _exps = new Dictionary<Groth, (int priValue, GI secValue)>();
+            else _exps = new Dictionary<Groth, (int priValue, GV secValue)>();
         }
 
         #endregion
@@ -131,80 +144,131 @@ namespace NFT.NavyReader
         #endregion
 
 
-        #region ---- Process PInvoke ----
+        #region ---- Process ----
 
-        GI _address;
-
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool SetCursorPos(int x, int y);
-        void SetCursor(int x, int y)
-        {
-            if (!SetCursorPos(x, y))
-            {
-                var error = Marshal.GetLastWin32Error();
-                log($"SetCursor() error: code= {error}");
-            }
-
-        }
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr OpenProcess(ProcessAccessFlags processAccess, bool bInheritHandle, int processId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out int lpNumberOfBytesRead);
-        byte[] ReadProcessMemory(int address, int size)
-        {
-            byte[] buffer = new byte[size];
-            var ipAddress = new IntPtr(address);
-            var result = ReadProcessMemory(_handle, ipAddress, buffer, size, out var numBytes);
-            if (!result || numBytes != size) throw new Exception($"ReadProcessMemory() failed: result={result}, numBytes={numBytes}");
-            return buffer;
-        }
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
-        [SuppressUnmanagedCodeSecurity]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool CloseHandle(IntPtr hObject);
-
-
-        Process _process;
-        IntPtr _handle;
-        public Process Process => _process;
+        static string _processName = "NavyFIELD";
+        ProcessLogic _procLogic;
+        GA _address;
         void initProcess()
         {
-            var appName = "NavyFIELD";
-            _process = Process.GetProcessesByName(appName)[0];
-            _handle = OpenProcess(ProcessAccessFlags.PROCESS_VM_READ, false, _process.Id);
-            log($"app= {appName}, process handle= 0x{_handle:X}, main window title= {_process.MainWindowTitle}");
+            _procLogic = new ProcessLogic(_processName);
+            log(_procLogic);
         }
 
-        public void Dispose()
+        Dictionary<Groth, List<long>> _temp = new Dictionary<Groth, List<long>>();
+        void search(GV gis)
         {
-            if (_handle != null) CloseHandle(_handle);
+            log("Starting search()...");
+            foreach (var g in gis.Keys)
+            {
+                _temp[g] = _procLogic.Search(gis[g]);
+                log($"{g}{gis[g],3}{_temp[g].Count,6}");
+            }
+            log("Quiting search()...");
         }
-        public void SaveConfig()
+        void filter(GV gis)
         {
-            saveSels();
-            saveExps();
-            saveNames();
+            log("Starting filter()...");
+            foreach (var g in gis.Keys)
+            {
+                f(g, gis[g]);
+                log($"{g}{gis[g],3}{_temp[g].Count,6}");
+            }
+            void f(Groth g, int value) => _temp[g] = _temp[g].Where(a => r(a) == value).ToList();
+            int r(long a)
+            {
+                try { return BitConverter.ToInt32(_procLogic.ReadProcessMemory(a, 4), 0); }
+                catch { return 0; }
+            }
+            log("Quiting filter()...");
+        }
+        public void testSearch(PictureBox pbColor, PictureBox pbBw)
+        {
+            //TestOcr(pbColor, pbBw);
+            //search(_acts);
+            findAddress();
+        }
+        public void testFilter(PictureBox pbColor, PictureBox pbBw)
+        {
+            TestOcr(pbColor, pbBw);
+            filter(_acts);
         }
 
+        void findAddress()
+        {
+            log("Starting findAddress()...");
+            WindowLogic.WindowToFront(_procLogic.Process);
+            Thread.Sleep(1000);
+            _imgSize = ((int)(_size.x * _desktopRatio), (int)(_size.y * _desktopRatio));
+            _origin = WindowLogic.GetWindowPosition(_procLogic.Process);
+            _imgStart = ((int)((_origin.X + _groth.X) * _desktopRatio), (int)((_origin.Y + _groth.Y) * _desktopRatio));
+
+            click(_newButton);
+            Thread.Sleep(100);
+            _runCounter = 0;
+
+            while (_runCounter++ < 10)
+            {
+                Thread.Sleep(1000);
+                try { read(); }
+                catch (Exception ex)
+                {
+                    log(ex.Message);
+                    continue;
+                }
+                if(_runCounter == 1) search(_acts);
+                else filter(_acts);
+
+                var ok = true;
+                foreach (var g in _temp.Keys) ok &= (_temp[g].Count <= 2) && (_temp[g].Count > 0);
+                if (ok)
+                {
+                    _sb.Clear();
+                    foreach (var g in _temp.Keys)
+                    {
+                        _address[g] = _temp[g].Last();
+                        _sb.Append($"{g}= 0x{_address[g],8:X}\n");
+                    }
+                    log(_sb.ToString());
+                    saveAddress();
+                    break;
+                }
+
+                click(_renewButton);
+            }
+            log("Quiting findAddress()...");
+        }
+        static readonly string _addressFile = "address.json";
+        void saveAddress()
+        {
+            log($"Saving address: {_addressFile}");
+            string json = JsonConvert.SerializeObject(_address, Formatting.Indented);
+            File.WriteAllText(_addressFile, json);
+        }
+        void loadAddress()
+        {
+            if (File.Exists(_addressFile))
+            {
+                log($"Loading sels: {_addressFile}");
+                var text = File.ReadAllText(_addressFile);
+                _address = JsonConvert.DeserializeObject<GA>(text);
+            }
+            else _address = new GA();
+        }
         #endregion
 
 
         #region ---- Run ----
 
-        GI _acts;
+        static double _desktopRatio = 1.5;
+        Ocr _ocr;
         Point _origin;
         Point _newButton = new Point(895, 720);
         Point _renewButton = new Point(665, 420);
         Point _groth = new Point(435, 243);
-        Ocr _ocr;
-        static double _desktopRatio = 1.0;
-        int _blackLevel = 180;
-        (int x, int y) _grothSize = (20, 150);
+        (int x, int y) _size = (20, 150);
+        int _blackLevel = 200;
+        GV _acts;
 
         volatile bool _running = false;
         ManualResetEvent _exitEvent = new ManualResetEvent(true);
@@ -234,15 +298,19 @@ namespace NFT.NavyReader
         (int w, int h) _imgSize;
         void run()
         {
+            log("Starting run()...");
             Thread.Sleep(100);
-            WindowHelper.BringMainWindowToFront(_process);
-            _origin = WindowHelper.GetWindowPosition(_process);
+            WindowLogic.WindowToFront(_procLogic.Process);
+
+            _desktopRatio = WindowLogic.GetScalingFactor();
+            _imgSize = ((int)(_size.x * _desktopRatio), (int)(_size.y * _desktopRatio));
+            _origin = WindowLogic.GetWindowPosition(_procLogic.Process);
             _imgStart = ((int)((_origin.X + _groth.X) * _desktopRatio), (int)((_origin.Y + _groth.Y) * _desktopRatio));
-            _imgSize = ((int)(_grothSize.x * _desktopRatio), (int)(_grothSize.y * _desktopRatio));
 
             saveSels();
             saveNames();
             loadExps();
+            loadAddress();
 
             Thread.Sleep(100);
             click(_newButton);
@@ -251,15 +319,16 @@ namespace NFT.NavyReader
 
             while (_running)
             {
-                //update(4, ++counter);
                 _runCounter++;
+                WindowLogic.WindowToFront(_procLogic.Process);
 
                 if (!_running) break;
                 Thread.Sleep(800);
 
                 try
                 {
-                    read();
+                    //read();
+                    readMemory();
                 }
                 catch (Exception ex)
                 {
@@ -285,14 +354,14 @@ namespace NFT.NavyReader
                 //return;
             }
 
-            log("Exiting Run()...");
+            log("Quiting run()...");
             _exitEvent.Set();
         }
 
         void click(Point clientPoint)
         {
             //Cursor.Position = new Point(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
-            SetCursor(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
+            WindowLogic.SetCursor(_origin.X + clientPoint.X, _origin.Y + clientPoint.Y);
             //log($"cursor= ({Cursor.Position})");
             Thread.Sleep(100);
             SI.SendMouseLeft();
@@ -312,10 +381,10 @@ namespace NFT.NavyReader
 
                 var nums = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(x => int.Parse(x)).ToArray();
 
-                //_sb.Clear();
-                //_sb.Append($"[{_runCounter,5}]");
-                //foreach (var n in nums) _sb.Append($"{n,03:D2}");
-                //log(_sb.ToString());
+                _sb.Clear();
+                _sb.Append($"[{_runCounter,5}]");
+                foreach (var n in nums) _sb.Append($"{n,03:D2}");
+                log(_sb.ToString());
                 var isError = nums.Length != 11;
                 for (int i = 1; i < nums.Length; i++) isError |= (nums[i] > 12);
                 isError |= nums.Length > 0 && nums[0] > 15;
@@ -338,9 +407,14 @@ namespace NFT.NavyReader
         {
             foreach (var g in _address.Keys)
             {
-                var buffer = ReadProcessMemory(_address[g], 4);
+                var buffer = _procLogic.ReadProcessMemory(_address[g], 4);
                 _acts[g] = BitConverter.ToInt32(buffer, 0);
             }
+
+            _sb.Clear();
+            _sb.Append($"[{_runCounter,5}]");
+            foreach (var g in _acts.Keys) _sb.Append($"{_acts[g],03:D2}");
+            log(_sb.ToString());
         }
 
         Groth check2()
@@ -374,11 +448,11 @@ namespace NFT.NavyReader
 
         public void Test()
         {
-            readMemory();
-            return;
+            //readMemory();
+            //return;
 
-            saveSels();
-            saveNames();
+            //saveSels();
+            //saveNames();
 
             buildExps();
             saveExps();
@@ -402,21 +476,21 @@ namespace NFT.NavyReader
             }
             void buildExps()
             {
-                _exps = new Dictionary<Groth, (int priValue, GI secValue)>();
-                _exps[Groth.G잠재] = (15, new GI());
-                _exps[Groth.G명중] = (12, new GI { { Groth.G연사, 11 } });
-                _exps[Groth.G연사] = (12, new GI { { Groth.G명중, 11 } });
+                _exps = new Dictionary<Groth, (int priValue, GV secValue)>();
+                _exps[Groth.G잠재] = (15, new GV());
+                _exps[Groth.G명중] = (12, new GV { { Groth.G연사, 11 } });
+                _exps[Groth.G연사] = (12, new GV { { Groth.G명중, 11 } });
 
-                _exps[Groth.G어뢰] = (12, new GI { { Groth.G연사, 11 } });
-                _exps[Groth.G대공] = (12, new GI { { Groth.G연사, 11 } });
+                _exps[Groth.G어뢰] = (12, new GV { { Groth.G연사, 11 } });
+                _exps[Groth.G대공] = (12, new GV { { Groth.G연사, 11 } });
 
-                _exps[Groth.G수리] = (12, new GI { { Groth.G보수, 11 } });
-                _exps[Groth.G보수] = (12, new GI { { Groth.G수리, 11 } });
-                _exps[Groth.G기관] = (12, new GI { { Groth.G수리, 11 } });
+                _exps[Groth.G수리] = (12, new GV { { Groth.G보수, 11 } });
+                _exps[Groth.G보수] = (12, new GV { { Groth.G수리, 11 } });
+                _exps[Groth.G기관] = (12, new GV { { Groth.G수리, 11 } });
 
-                _exps[Groth.G함재] = (12, new GI { { Groth.G전투, 10 }, { Groth.G폭격, 10 } });
-                _exps[Groth.G전투] = (12, new GI { { Groth.G함재, 10 }, { Groth.G폭격, 10 } });
-                _exps[Groth.G폭격] = (12, new GI { { Groth.G함재, 10 }, { Groth.G전투, 10 } });
+                _exps[Groth.G함재] = (12, new GV { { Groth.G전투, 10 }, { Groth.G폭격, 10 } });
+                _exps[Groth.G전투] = (12, new GV { { Groth.G함재, 10 }, { Groth.G폭격, 10 } });
+                _exps[Groth.G폭격] = (12, new GV { { Groth.G함재, 10 }, { Groth.G전투, 10 } });
             }
         }
         #endregion
@@ -424,13 +498,32 @@ namespace NFT.NavyReader
 
         #region ---- OCR ----
 
+        public void SetOrigin()
+        {
+            WindowLogic.SetWindowPosition(_procLogic.Process, 1535, 671);
+        }
+
         public void TestOcr(PictureBox pbColor, PictureBox pbBw)
         {
-            WindowHelper.BringMainWindowToFront(_process);
-            _origin = WindowHelper.GetWindowPosition(_process);
+            //--- test ----
+            //_processName = "WindowsFormsApp1";//"NavyFIELD";
+            //_newButton = new Point(100, 100);
+            //_renewButton = new Point(100, 100);
+            //_groth = new Point(19, 32);
+            //_size = (23, 260);
+            //_blackLevel = 180;
+
+            WindowLogic.WindowToFront(_procLogic.Process);
+            _desktopRatio = WindowLogic.GetScalingFactor();
+            log($"_desktopRatio= {_desktopRatio:N2}");
+
+            _origin = WindowLogic.GetWindowPosition(_procLogic.Process);
             _imgStart = ((int)((_origin.X + _groth.X) * _desktopRatio), (int)((_origin.Y + _groth.Y) * _desktopRatio));
-            _imgSize = ((int)(_grothSize.x * _desktopRatio), (int)(_grothSize.y * _desktopRatio));
-            Thread.Sleep(100);
+            _imgSize = ((int)(_size.x * _desktopRatio), (int)(_size.y * _desktopRatio));
+            Thread.Sleep(500);
+
+            click(_renewButton);
+            Thread.Sleep(1000);
 
             using var ocr = new Ocr();
             var image = Ocr.Capture(_imgStart, _imgSize);
@@ -466,6 +559,8 @@ namespace NFT.NavyReader
             var time = DateTime.Now.ToString("HHmmss.f");
             result.image.Save($"{time}_c.png", ImageFormat.Png);
             result.imgBw.Save($"{time}_b.png", ImageFormat.Png);
+
+            if(!isError) for (int i = 0; i < nums.Length; i++) _acts[(Groth)i] = nums[i];
         }
 
         #endregion

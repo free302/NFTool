@@ -108,7 +108,7 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
-            this.splitContainer1.Size = new System.Drawing.Size(885, 658);
+            this.splitContainer1.Size = new System.Drawing.Size(1010, 658);
             this.splitContainer1.SplitterDistance = 319;
             this.splitContainer1.SplitterIncrement = 10;
             this.splitContainer1.TabIndex = 0;
@@ -399,7 +399,7 @@
             // 
             this.splitContainer2.Panel2.Controls.Add(this.tableLayoutPanel1);
             this.splitContainer2.Panel2Collapsed = true;
-            this.splitContainer2.Size = new System.Drawing.Size(562, 658);
+            this.splitContainer2.Size = new System.Drawing.Size(687, 658);
             this.splitContainer2.SplitterDistance = 633;
             this.splitContainer2.TabIndex = 0;
             // 
@@ -408,9 +408,10 @@
             this.uiLog.BackColor = System.Drawing.Color.DimGray;
             this.uiLog.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.uiLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.uiLog.Font = new System.Drawing.Font("Consolas", 13F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.uiLog.Location = new System.Drawing.Point(0, 0);
             this.uiLog.Name = "uiLog";
-            this.uiLog.Size = new System.Drawing.Size(562, 658);
+            this.uiLog.Size = new System.Drawing.Size(687, 658);
             this.uiLog.TabIndex = 0;
             this.uiLog.Text = "";
             // 
@@ -460,7 +461,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(14F, 36F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.DimGray;
-            this.ClientSize = new System.Drawing.Size(885, 658);
+            this.ClientSize = new System.Drawing.Size(1010, 658);
             this.Controls.Add(this.splitContainer1);
             this.Font = new System.Drawing.Font("Noto Sans KR Regular", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
             this.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);

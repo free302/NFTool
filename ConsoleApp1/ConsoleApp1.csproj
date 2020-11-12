@@ -5,8 +5,4 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Genesis.Tesseract4" Version="4.0.2.11" />
-  </ItemGroup>
-
 </Project>

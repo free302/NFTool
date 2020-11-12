@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows;
 
 namespace NFT.NavyReader
 {
@@ -16,7 +17,6 @@ namespace NFT.NavyReader
         public MainForm()
         {
             InitializeComponent();            
-
             try
             {
                 _app = new AppLogic(log);
@@ -52,6 +52,7 @@ namespace NFT.NavyReader
             _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F3);
             _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F4);//TEST
             _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F5);//TEST
+            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F6);//TEST
         }
         async void HotKeyPressed(object sender, KeyPressedEventArgs e)
         {
@@ -68,30 +69,38 @@ namespace NFT.NavyReader
                 if (e.Key == Keys.F2)
                 {
                     splitContainer2.Panel2Collapsed = false;
+                    splitContainer2.SplitterDistance = 600;
+                    Height = 1200;
                     _app.TestOcr(uiPicture, uiPicture2);
                 }
                 if (e.Key == Keys.F3)
                 {
-                    var f = new KeyRecorder(this);
-                    var keys = await f.GetKeys();
-                    uiName1.Text = keys.text;
-                    uiLog.Focus();
-                    Thread.Sleep(100);
-                    var kp = new KeysPlayer(keys.data);
-                    kp.Start();
-                }
-                if (e.Key == Keys.F4)
-                {
-                    //WindowHelper.SetWindowPosition(_app.Process);
                     splitContainer2.Panel2Collapsed = false;
                     var fd = new OpenFileDialog();
                     fd.Filter = "Iamge|*.bmp;*.png;*.jpg";
                     if(fd.ShowDialog() == DialogResult.OK) _app.TestOcr2(fd.FileName, uiPicture, uiPicture2);
                 }
+                if (e.Key == Keys.F4)
+                {
+                    //var f = new KeyRecorder(this);
+                    //var keys = await f.GetKeys();
+                    //uiName1.Text = keys.text;
+                    //uiLog.Focus();
+                    //Thread.Sleep(100);
+                    //var kp = new KeysPlayer(keys.data);
+                    //kp.Start();
+                    _app.SetOrigin();
+                    log($"{Cursor.Position}");
+                }
                 if (e.Key == Keys.F5)
                 {
                     //saveSels();
-                    _app.Test();
+                    //_app.Test();
+                    _app.testSearch(uiPicture, uiPicture2);
+                }
+                if (e.Key == Keys.F6)
+                {
+                    _app.testFilter(uiPicture, uiPicture2);
                 }
             }
             catch (Exception ex)

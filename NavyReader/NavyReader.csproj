@@ -52,6 +52,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -82,12 +83,13 @@
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Ocr.cs" />
+    <Compile Include="ProcessLogic.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ref1\KeyPlayer.cs" />
     <Compile Include="ref1\KeySaver.cs" />
     <Compile Include="ref1\SendInputTypes.cs" />
-    <Compile Include="WindowHelper.cs" />
+    <Compile Include="WindowLogic.cs" />
     <EmbeddedResource Include="KeyRecorder.resx">
       <DependentUpon>KeyRecorder.cs</DependentUpon>
     </EmbeddedResource>
