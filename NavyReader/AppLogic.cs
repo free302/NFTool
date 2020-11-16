@@ -159,9 +159,13 @@ namespace NFT.NavyReader
         void search(GV gis)
         {
             log("Starting search()...");
+            var dic = _procLogic.ReadAll();
+
             foreach (var g in gis.Keys)
             {
-                _temp[g] = _procLogic.Search(gis[g]);
+                _temp[g] = new List<long>();
+                //_temp[g] = _procLogic.Search(gis[g]);
+                foreach (var a in dic.Keys) if (dic[a] == gis[g]) _temp[g].Add(a);
                 log($"{g}{gis[g],3}{_temp[g].Count,6}");
             }
             log("Quiting search()...");
@@ -169,24 +173,31 @@ namespace NFT.NavyReader
         void filter(GV gis)
         {
             log("Starting filter()...");
+            var dic = _procLogic.ReadAll();
+
             foreach (var g in gis.Keys)
             {
-                f(g, gis[g]);
+                //f(g, gis[g]);
+                _temp[g] = _temp[g].Where(a => dic[a] == gis[g]).ToList();
                 log($"{g}{gis[g],3}{_temp[g].Count,6}");
             }
-            void f(Groth g, int value) => _temp[g] = _temp[g].Where(a => r(a) == value).ToList();
-            int r(long a)
-            {
-                try { return BitConverter.ToInt32(_procLogic.ReadProcessMemory(a, 4), 0); }
-                catch { return 0; }
-            }
+            //void f(Groth g, int value) => _temp[g] = _temp[g].Where(a => r(a) == value).ToList();
+            //int r(long a)
+            //{
+            //    try { return BitConverter.ToInt32(_procLogic.ReadProcessMemory(a, 4), 0); }
+            //    catch (Exception ex)
+            //    {
+            //        log($"{ex.Message}");
+            //        return 0; 
+            //    }
+            //}
             log("Quiting filter()...");
         }
         public void testSearch(PictureBox pbColor, PictureBox pbBw)
         {
-            //TestOcr(pbColor, pbBw);
-            //search(_acts);
-            findAddress();
+            TestOcr(pbColor, pbBw);
+            search(_acts);
+            //findAddress();
         }
         public void testFilter(PictureBox pbColor, PictureBox pbBw)
         {
@@ -199,6 +210,10 @@ namespace NFT.NavyReader
             log("Starting findAddress()...");
             WindowLogic.WindowToFront(_procLogic.Process);
             Thread.Sleep(1000);
+
+            _desktopRatio = WindowLogic.GetScalingFactor();
+            log($"_desktopRatio= {_desktopRatio:N2}");
+
             _imgSize = ((int)(_size.x * _desktopRatio), (int)(_size.y * _desktopRatio));
             _origin = WindowLogic.GetWindowPosition(_procLogic.Process);
             _imgStart = ((int)((_origin.X + _groth.X) * _desktopRatio), (int)((_origin.Y + _groth.Y) * _desktopRatio));
@@ -216,17 +231,23 @@ namespace NFT.NavyReader
                     log(ex.Message);
                     continue;
                 }
-                if(_runCounter == 1) search(_acts);
+                if (_runCounter == 1) search(_acts);
                 else filter(_acts);
 
                 var ok = true;
-                foreach (var g in _temp.Keys) ok &= (_temp[g].Count <= 2) && (_temp[g].Count > 0);
+                var error = false;
+                foreach (var g in _temp.Keys)
+                {
+                    ok &= (_temp[g].Count <= 2) && (_temp[g].Count > 0);
+                    error |= _temp[g].Count == 0;
+                }
+                if (error) break;
                 if (ok)
                 {
                     _sb.Clear();
                     foreach (var g in _temp.Keys)
                     {
-                        _address[g] = _temp[g].Last();
+                        _address[g] = _temp[g].First();
                         _sb.Append($"{g}= 0x{_address[g],8:X}\n");
                     }
                     log(_sb.ToString());
@@ -238,6 +259,12 @@ namespace NFT.NavyReader
             }
             log("Quiting findAddress()...");
         }
+        
+        public void ChangeValue()
+        {
+
+        }
+
         static readonly string _addressFile = "address.json";
         void saveAddress()
         {
@@ -255,6 +282,7 @@ namespace NFT.NavyReader
             }
             else _address = new GA();
         }
+       
         #endregion
 
 
@@ -312,9 +340,10 @@ namespace NFT.NavyReader
             loadExps();
             loadAddress();
 
-            Thread.Sleep(100);
+            var delay = 800;
+            var random = new Random();
             click(_newButton);
-            Thread.Sleep(100);
+            Thread.Sleep(delay);
             _runCounter = 0;
 
             while (_running)
@@ -323,12 +352,12 @@ namespace NFT.NavyReader
                 WindowLogic.WindowToFront(_procLogic.Process);
 
                 if (!_running) break;
-                Thread.Sleep(800);
+                Thread.Sleep(delay + random.Next(0, 700));
 
                 try
                 {
-                    //read();
-                    readMemory();
+                    read();
+                    //readMemory();
                 }
                 catch (Exception ex)
                 {
@@ -381,22 +410,14 @@ namespace NFT.NavyReader
 
                 var nums = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(x => int.Parse(x)).ToArray();
 
-                _sb.Clear();
-                _sb.Append($"[{_runCounter,5}]");
-                foreach (var n in nums) _sb.Append($"{n,03:D2}");
-                log(_sb.ToString());
                 var isError = nums.Length != 11;
                 for (int i = 1; i < nums.Length; i++) isError |= (nums[i] > 12);
                 isError |= nums.Length > 0 && nums[0] > 15;
+                logOcr(nums, isError);
+
                 if (isError)
                 {
-                    var time = DateTime.Now.ToString("HHmmss.f");
-                    result.image.Save($"{time}_c.png", ImageFormat.Png);
-                    result.imgBw.Save($"{time}_b.png", ImageFormat.Png);
-
-                    _sb.Clear();
-                    _sb.Append($"[{_runCounter,5}] OCR Error({nums.Length}):");
-                    foreach (var n in nums) _sb.Append($"{n,03:D2}");
+                    saveImage(result.imgC, result.imgG);
                     throw new Exception(_sb.ToString());
                 }
                 else for (int i = 0; i < nums.Length; i++) _acts[(Groth)i] = nums[i];
@@ -500,7 +521,8 @@ namespace NFT.NavyReader
 
         public void SetOrigin()
         {
-            WindowLogic.SetWindowPosition(_procLogic.Process, 1535, 671);
+            //WindowLogic.SetWindowPosition(_procLogic.Process, 1535, 671);
+            WindowLogic.SetWindowPosition(_procLogic.Process, 1024, 768);
         }
 
         public void TestOcr(PictureBox pbColor, PictureBox pbBw)
@@ -535,12 +557,12 @@ namespace NFT.NavyReader
             var image = new Bitmap(fileName);// ("215822.3_c.png");
             testOcr(ocr, image, pbColor, pbBw);
         }
-        void testOcr(Ocr ocr, Bitmap image, PictureBox imgColor, PictureBox imgBw)
+        void testOcr(Ocr ocr, Bitmap image, PictureBox pbC, PictureBox pbG)
         {
             var result = ocr.Process(image, _blackLevel);
-            imgColor.Image = result.image;
-            imgBw.Image = result.imgBw;
-            //log($"img= {result.image.Size} => {result.imgBw.Size}");
+            saveImage(result.imgC, result.imgG);
+            pbC.Image = result.imgC;
+            pbG.Image = result.imgG;
 
             var text = result.text.Trim().Replace(" ", "").Replace('\n', ' ');
             //log($"ocr: {text}");
@@ -550,18 +572,27 @@ namespace NFT.NavyReader
             var isError = nums.Length != 11;
             for (int i = 1; i < nums.Length; i++) isError |= (nums[i] > 12);
             isError |= nums.Length > 0 && nums[0] > 15;
+            logOcr(nums, isError);
+            //saveImage(result.imgC, result.imgG);
 
+            if (!isError) for (int i = 0; i < nums.Length; i++) _acts[(Groth)i] = nums[i];
+        }
+
+        private void logOcr(int[] nums, bool isError)
+        {
             _sb.Clear();
-            _sb.Append($"[{_runCounter,5}] OCR {(isError?"ERROR":"OK")}({nums.Length}):");
+            _sb.Append($"[{_runCounter,5}] OCR {(isError ? "ERROR" : "OK")}({nums.Length}):");
             foreach (var n in nums) _sb.Append($"{n,03:D2}");
             log(_sb.ToString());
-
-            var time = DateTime.Now.ToString("HHmmss.f");
-            result.image.Save($"{time}_c.png", ImageFormat.Png);
-            result.imgBw.Save($"{time}_b.png", ImageFormat.Png);
-
-            if(!isError) for (int i = 0; i < nums.Length; i++) _acts[(Groth)i] = nums[i];
         }
+
+        private static void saveImage(Bitmap image, Bitmap imgBw)
+        {
+            var time = DateTime.Now.ToString("HHmmss.f");
+            image.Save($"{time}_c.bmp", ImageFormat.Bmp);
+            imgBw.Save($"{time}_b.bmp", ImageFormat.Bmp);
+        }
+
 
         #endregion
 

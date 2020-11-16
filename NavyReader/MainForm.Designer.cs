@@ -108,7 +108,7 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
-            this.splitContainer1.Size = new System.Drawing.Size(1010, 658);
+            this.splitContainer1.Size = new System.Drawing.Size(1074, 658);
             this.splitContainer1.SplitterDistance = 319;
             this.splitContainer1.SplitterIncrement = 10;
             this.splitContainer1.TabIndex = 0;
@@ -398,9 +398,8 @@
             // splitContainer2.Panel2
             // 
             this.splitContainer2.Panel2.Controls.Add(this.tableLayoutPanel1);
-            this.splitContainer2.Panel2Collapsed = true;
-            this.splitContainer2.Size = new System.Drawing.Size(687, 658);
-            this.splitContainer2.SplitterDistance = 633;
+            this.splitContainer2.Size = new System.Drawing.Size(751, 658);
+            this.splitContainer2.SplitterDistance = 476;
             this.splitContainer2.TabIndex = 0;
             // 
             // uiLog
@@ -411,7 +410,7 @@
             this.uiLog.Font = new System.Drawing.Font("Consolas", 13F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.uiLog.Location = new System.Drawing.Point(0, 0);
             this.uiLog.Name = "uiLog";
-            this.uiLog.Size = new System.Drawing.Size(687, 658);
+            this.uiLog.Size = new System.Drawing.Size(751, 476);
             this.uiLog.TabIndex = 0;
             this.uiLog.Text = "";
             // 
@@ -428,29 +427,29 @@
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.RowCount = 1;
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(150, 46);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(751, 178);
             this.tableLayoutPanel1.TabIndex = 0;
             // 
             // uiPicture2
             // 
-            this.uiPicture2.BackColor = System.Drawing.Color.Black;
+            this.uiPicture2.BackColor = System.Drawing.Color.Magenta;
             this.uiPicture2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.uiPicture2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.uiPicture2.Location = new System.Drawing.Point(78, 3);
+            this.uiPicture2.Location = new System.Drawing.Point(378, 3);
             this.uiPicture2.Name = "uiPicture2";
-            this.uiPicture2.Size = new System.Drawing.Size(69, 40);
+            this.uiPicture2.Size = new System.Drawing.Size(369, 172);
             this.uiPicture2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.uiPicture2.TabIndex = 1;
             this.uiPicture2.TabStop = false;
             // 
             // uiPicture
             // 
-            this.uiPicture.BackColor = System.Drawing.Color.Black;
+            this.uiPicture.BackColor = System.Drawing.Color.Magenta;
             this.uiPicture.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.uiPicture.Dock = System.Windows.Forms.DockStyle.Fill;
             this.uiPicture.Location = new System.Drawing.Point(3, 3);
             this.uiPicture.Name = "uiPicture";
-            this.uiPicture.Size = new System.Drawing.Size(69, 40);
+            this.uiPicture.Size = new System.Drawing.Size(369, 172);
             this.uiPicture.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.uiPicture.TabIndex = 0;
             this.uiPicture.TabStop = false;
@@ -461,7 +460,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(14F, 36F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.DimGray;
-            this.ClientSize = new System.Drawing.Size(1010, 658);
+            this.ClientSize = new System.Drawing.Size(1074, 658);
             this.Controls.Add(this.splitContainer1);
             this.Font = new System.Drawing.Font("Noto Sans KR Regular", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
             this.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);

@@ -46,8 +46,11 @@ namespace NFT.NavyReader
         const uint SWP_NOSIZE = 0x0001;
         const uint SWP_NOZORDER = 0x0004;
 
-        public static void SetWindowPosition(Process bProcess, int x, int y)
+        public static void SetWindowPosition(Process bProcess, int w, int h)
         {
+            var x = Screen.PrimaryScreen.WorkingArea.Width - w;
+            var y = Screen.PrimaryScreen.WorkingArea.Height - h;
+
             if (!SetWindowPos(bProcess.MainWindowHandle, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER)) 
                 throw new Exception($"SetWindowPosition() error: code= {Marshal.GetLastWin32Error()}");
         }
@@ -61,12 +64,15 @@ namespace NFT.NavyReader
             if (!SetCursorPos(x, y)) throw new Exception($"SetCursor() error: code= {Marshal.GetLastWin32Error()}");
         }
 
-        static double GetWindowsScaling()
+        public static (int, int, int, double, double, double) GetWindowsScaling()
         {
-            var w = Screen.PrimaryScreen.WorkingArea.Width;
+            var w0 = Screen.GetWorkingArea(new Point(0, 0)).Width;
+            var w1 = Screen.PrimaryScreen.WorkingArea.Width;
             var w2 = Screen.PrimaryScreen.Bounds.Width;
             var w3 = SystemParameters.PrimaryScreenWidth;
-            return w2 / w3;
+            var w4 = SystemParameters.MaximizedPrimaryScreenWidth;
+            var h4 = SystemParameters.MaximizedPrimaryScreenHeight;
+            return (w0, w1, w2, w3, w4, h4);
         }
 
         [DllImport("gdi32.dll")]

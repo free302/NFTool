@@ -25,7 +25,7 @@ namespace NFT.NavyReader
     [Flags]
     public enum ProcessAccessFlags : uint
     {
-        //All = 0x001F0FFF,
+        All = 0x001F0FFF,
         PROCESS_TERMINATE = 0x00000001,
         PROCESS_CREATE_THREAD = 0x00000002,
         PROCESS_VM_OPERATION = 0x00000008,
@@ -129,7 +129,8 @@ namespace NFT.NavyReader
             _appAddressRange = (_si.minimumApplicationAddress, _si.maximumApplicationAddress);
 
             _process = Process.GetProcessesByName(processName).First();
-            _handle = OpenProcess(EPA.PROCESS_VM_READ | EPA.PROCESS_QUERY_INFORMATION, false, _process.Id);
+            _handle = OpenProcess(EPA.All, false, _process.Id);
+            //_handle = OpenProcess(EPA.PROCESS_VM_READ | EPA.PROCESS_QUERY_INFORMATION, false, _process.Id);
         }
         public void Dispose()
         {
@@ -147,7 +148,10 @@ namespace NFT.NavyReader
         public byte[] ReadProcessMemory(long address, int size)
         {
             byte[] buffer = new byte[size];
-            var ipAddress = new IntPtr(address);
+            var ipAddress = (IntPtr)address;
+
+            //if (address > int.MaxValue) ;
+
             var result = ReadProcessMemory(_handle, ipAddress, buffer, size, out var numBytes);
             if (!result || numBytes != size)
                 throw new Exception($"ReadProcessMemory(0x{address:X}) failed: numBytes={numBytes}, error code={Marshal.GetLastWin32Error()}");
@@ -162,10 +166,10 @@ namespace NFT.NavyReader
 
 
         [DllImport("kernel32.dll")]
-        static extern void GetSystemInfo(out SI lpSystemInfo);
+        static extern void GetNativeSystemInfo(out SI lpSystemInfo);
         public static SI GetSystemInfo()
         {
-            GetSystemInfo(out var si);
+            GetNativeSystemInfo(out var si);
             return si;
         }
 
@@ -174,7 +178,7 @@ namespace NFT.NavyReader
         public MI VirtualQuery(long address)
         {
             var mi = new MI();
-            var result = VirtualQueryEx(_handle, new IntPtr(address), ref mi, MI.Size);
+            var result = VirtualQueryEx(_handle, (IntPtr)address, ref mi, MI.Size);
             if (result == 0) throw new Exception($"VirtualQueryEx() failed: error code={Marshal.GetLastWin32Error()}"); ;
             return mi;
         }
@@ -187,15 +191,56 @@ namespace NFT.NavyReader
             while (min < max)
             {
                 var mi = VirtualQuery(min);
+                if (min % 4 != 0) throw new Exception($"min %4 != 0");
                 if (mi.RegionSize % 4 != 0) throw new Exception($"mi.RegionSize %4 != 0");
-                if (mi.Protect == EMP.PAGE_READWRITE && mi.State == EMA.MEM_COMMIT)
+                if ((mi.Protect == EMP.PAGE_READWRITE) && mi.State == EMA.MEM_COMMIT)//PAGE_EXECUTE_READWRITE
+                //if ((mi.Protect == EMP.PAGE_EXECUTE_READWRITE || mi.Protect == EMP.PAGE_READWRITE ) && mi.State == EMA.MEM_COMMIT)//PAGE_EXECUTE_READWRITE
+                //if (mi.State == EMA.MEM_COMMIT)
                 {
                     var buffer = ReadProcessMemory(mi.BaseAddress, (int)mi.RegionSize);
-                    for (int i = 0; i < mi.RegionSize / 4; i += 4) if (BitConverter.ToInt32(buffer, i) == value) address.Add(min + i);
+                    var loop = mi.RegionSize / 4;
+                    for (int i = 0; i < loop; i += 4) if (BitConverter.ToInt32(buffer, i) == value) address.Add(min + i);
                 }
                 min += mi.RegionSize;
             }
             return address;
         }
+
+        public Dictionary<long, int> ReadAll()
+        {
+            var address = new List<long>();
+            var values = new List<int>();
+            var dic = new Dictionary<long, int>();
+
+            long min = (long)_appAddressRange.min;
+            long max = (long)_appAddressRange.max;
+            //long min = 0x0;// (long)_appAddressRange.min;
+            //long max = 0xffffffff;// (long)_appAddressRange.max;
+            var total = 0L;
+            while (min < max)
+            {
+                var mi = VirtualQuery(min);
+                if (mi.RegionSize % 4 != 0) throw new Exception($"mi.RegionSize %4 != 0");
+                if ((mi.Protect == EMP.PAGE_READWRITE) && mi.State == EMA.MEM_COMMIT)//PAGE_EXECUTE_READWRITE
+                //if (mi.Protect == EMP.PAGE_EXECUTE_READWRITE || mi.Protect == EMP.PAGE_NOCACHE)//PAGE_EXECUTE_READWRITE
+                //if (mi.State == EMA.MEM_COMMIT)
+                {
+                    var buffer = ReadProcessMemory(mi.BaseAddress, (int)mi.RegionSize);
+                    total += mi.RegionSize;
+                    var loop = mi.RegionSize / 4;
+                    for (int i = 0; i < loop; i += 4)
+                    {
+                        //Array.Reverse(buffer, 0, 4);
+                        dic[min + i] = BitConverter.ToInt32(buffer, i);
+                        //dic[min + i] = (int)BitConverter.ToUInt32(buffer, i);
+                        //address.Add(min + i);
+                        //values.Add(BitConverter.ToInt32(buffer, i));
+                    }
+                }
+                min += mi.RegionSize;
+            }
+            return dic;// (address, values);
+        }
+    
     }
 }

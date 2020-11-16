@@ -34,7 +34,7 @@ namespace NFT.NavyReader
             f[2] = new float[] { 0, 0, 1, 0, 0 };
             f[3] = new float[] { 0, 0, 0, 1, 0 };
             f[4] = new float[] { 1, 1, 1, 0, 1 };
-            _cmInversion = new ColorMatrix(f);
+            //_cmInversion = new ColorMatrix(f);
         }
 
         TesseractEngine _engine;
@@ -46,15 +46,16 @@ namespace NFT.NavyReader
             g.CopyFromScreen(origin.sx, origin.xy, 0, 0, new Size(size.w, size.h));
             return image;
         }
-        public (Bitmap image, Bitmap imgBw, string text) Process(Bitmap image, int level)
+        public (Bitmap imgC, Bitmap imgG, string text) Process(Bitmap image, int level)
         {
             //var imgBw = toBW(image, level);
-            var imgBw = toGray(image, 4, level);
+            //var img = toGray(image, 4, level);
+            var img = removeNoise(image, 4, level);
 
-            Pix pix = PixConverter.ToPix(imgBw);
+            Pix pix = PixConverter.ToPix(img);
             var result = _engine.Process(pix);
             var text = result.GetText();
-            return (image, imgBw, text);
+            return (image, img, text);
         }
 
         static Bitmap toBW(Bitmap image, int level)
@@ -72,33 +73,36 @@ namespace NFT.NavyReader
             return imgBw;
         }
         static ColorMatrix _cmGray;
-        static ColorMatrix _cmInversion;
-        static Bitmap toGray(Bitmap bitmap, int scale, int level)
+        static Bitmap toGray(Bitmap image, int level)
         {
-            using var imgS = new Bitmap(bitmap, new Size(bitmap.Width * scale, bitmap.Height * scale));//
-            using var imgC = new Bitmap(imgS.Width, imgS.Height);//, PixelFormat.Format16bppGrayScale);
-            for (int y = 0; y < imgS.Height; y++)
-            {
-                for (int x = 0; x < imgS.Width; x++)
-                {
-                    var c = imgS.GetPixel(x, y);
-                    if (c.R < level && c.G < level && c.B < level) imgC.SetPixel(x, y, Color.White);
-                    else imgC.SetPixel(x, y, Color.FromArgb(255 - c.R, 255 - c.G, 255 - c.B));
-                }
-            }
-
-            var destRect = new Rectangle(0, 0, imgS.Width, imgS.Height);
             using var attributes = new ImageAttributes();
-
-            //using var gC = Graphics.FromImage(imgC);
-            //attributes.SetColorMatrix(_cmInversion);
-            //gC.DrawImage(imgS, destRect, 0, 0, imgC.Width, imgC.Height, GraphicsUnit.Pixel, attributes);
-
-            var imgG = new Bitmap(imgC.Width, imgC.Height);//, PixelFormat.Format16bppGrayScale);
+            var destRect = new Rectangle(0, 0, image.Width, image.Height);
+            var imgG = new Bitmap(image.Width, image.Height);
             using var gG = Graphics.FromImage(imgG);
             attributes.SetColorMatrix(_cmGray);
-            gG.DrawImage(imgC, destRect, 0, 0, imgG.Width, imgG.Height, GraphicsUnit.Pixel, attributes);
+            gG.DrawImage(image, destRect, 0, 0, imgG.Width, imgG.Height, GraphicsUnit.Pixel, attributes);
             return imgG;
+        }
+
+        static Bitmap removeNoise(Bitmap image, int scale, int level)
+        {
+            var img = new Bitmap(image, new Size(image.Width * scale, image.Height * scale));//
+            var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadWrite, img.PixelFormat);
+            unsafe
+            {
+                var ptr = (byte*)data.Scan0;
+                var lenCol = data.Stride;
+                for (int y = 0; y < img.Height; ++y)
+                {
+                    byte* row = ptr + y * lenCol;
+                    for (int x = 0; x < lenCol; x += 4)
+                    {
+                        if (row[x] < level && row[x + 1] < level && row[x + 2] < level) row[x] = row[x + 1] = row[x + 2] = 0;
+                    }
+                }
+            }
+            img.UnlockBits(data);
+            return img;
         }
 
         public void Dispose()

@@ -53,6 +53,7 @@ namespace NFT.NavyReader
             _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F4);//TEST
             _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F5);//TEST
             _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F6);//TEST
+            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F12);//TEST
         }
         async void HotKeyPressed(object sender, KeyPressedEventArgs e)
         {
@@ -76,9 +77,15 @@ namespace NFT.NavyReader
                 if (e.Key == Keys.F3)
                 {
                     splitContainer2.Panel2Collapsed = false;
+                    splitContainer2.SplitterDistance = 600;
+                    Height = 1200;
                     var fd = new OpenFileDialog();
                     fd.Filter = "Iamge|*.bmp;*.png;*.jpg";
-                    if(fd.ShowDialog() == DialogResult.OK) _app.TestOcr2(fd.FileName, uiPicture, uiPicture2);
+                    if (fd.ShowDialog() == DialogResult.OK)
+                    {
+                        log($"Loading file: {fd.FileName}");
+                        _app.TestOcr2(fd.FileName, uiPicture, uiPicture2);
+                    }
                 }
                 if (e.Key == Keys.F4)
                 {
@@ -90,7 +97,8 @@ namespace NFT.NavyReader
                     //var kp = new KeysPlayer(keys.data);
                     //kp.Start();
                     _app.SetOrigin();
-                    log($"{Cursor.Position}");
+                    log($"cursor={Cursor.Position}");
+                    log($"size={this.Size}");
                 }
                 if (e.Key == Keys.F5)
                 {
@@ -99,6 +107,10 @@ namespace NFT.NavyReader
                     _app.testSearch(uiPicture, uiPicture2);
                 }
                 if (e.Key == Keys.F6)
+                {
+                    _app.testFilter(uiPicture, uiPicture2);
+                }
+                if (e.Key == Keys.F2)
                 {
                     _app.testFilter(uiPicture, uiPicture2);
                 }
