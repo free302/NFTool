@@ -53,6 +53,7 @@ namespace NFT.NavyReader
             _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F4);//TEST
             _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F5);//TEST
             _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F6);//TEST
+            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F7);//TEST
             _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F12);//TEST
         }
         async void HotKeyPressed(object sender, KeyPressedEventArgs e)
@@ -102,15 +103,17 @@ namespace NFT.NavyReader
                 }
                 if (e.Key == Keys.F5)
                 {
-                    //saveSels();
-                    //_app.Test();
                     _app.testSearch(uiPicture, uiPicture2);
                 }
                 if (e.Key == Keys.F6)
                 {
                     _app.testFilter(uiPicture, uiPicture2);
                 }
-                if (e.Key == Keys.F2)
+                if (e.Key == Keys.F7)
+                {
+                    _app.FindAddress();
+                }
+                if (e.Key == Keys.F12)
                 {
                     _app.testFilter(uiPicture, uiPicture2);
                 }
@@ -202,7 +205,7 @@ namespace NFT.NavyReader
         void log(object message = null)
         {
             var msg = $"[{DateTime.Now:HHmmss.f}] {message}\n";
-            File.AppendAllText("log.txt", msg);
+            //File.AppendAllText("log.txt", msg);
 
             invoke(() =>
             {

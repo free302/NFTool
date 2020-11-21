@@ -22,16 +22,19 @@ namespace NFT.NavyReader
     using KL = List<(Keys key, IntPtr wp)>;
     using KF = ValueTuple<Dictionary<Groth, string>, Dictionary<Groth, List<(Keys key, IntPtr wp)>>>;
     using GV = Dictionary<Groth, int>;
-    using GA = Dictionary<Groth, long>;
+    using GA = Dictionary<Groth, IntPtr>;
 
     internal class AppLogic : IDisposable
     {
         #region ---- UI ----
 
-        Action<object> _logger;
-        public AppLogic(Action<object> logger)
+        Action<object> _reporter;
+        const string _logFileBase = "log.txt";
+        string _logFile = _logFileBase;
+        const string _savingLog = "saving.txt";
+        public AppLogic(Action<object> reporter)
         {
-            _logger = logger;
+            _reporter = reporter;
             _acts = new GV();
 
             loadAddress();
@@ -39,7 +42,11 @@ namespace NFT.NavyReader
             loadSels();
             initProcess();
         }
-        void log(object msg) => _logger?.Invoke(msg);
+        void log(object msg)
+        {
+            _reporter?.Invoke(msg);
+            File.AppendAllText(_logFile, $"[{DateTime.Now:dd.HHmmss.f}] {msg}\n");
+        }
 
         public void SaveConfig()
         {
@@ -155,7 +162,7 @@ namespace NFT.NavyReader
             log(_procLogic);
         }
 
-        Dictionary<Groth, List<long>> _temp = new Dictionary<Groth, List<long>>();
+        Dictionary<Groth, List<IntPtr>> _temp = new Dictionary<Groth, List<IntPtr>>();
         void search(GV gis)
         {
             log("Starting search()...");
@@ -163,7 +170,7 @@ namespace NFT.NavyReader
 
             foreach (var g in gis.Keys)
             {
-                _temp[g] = new List<long>();
+                _temp[g] = new List<IntPtr>();
                 //_temp[g] = _procLogic.Search(gis[g]);
                 foreach (var a in dic.Keys) if (dic[a] == gis[g]) _temp[g].Add(a);
                 log($"{g}{gis[g],3}{_temp[g].Count,6}");
@@ -174,23 +181,23 @@ namespace NFT.NavyReader
         {
             log("Starting filter()...");
             var dic = _procLogic.ReadAll();
-
             foreach (var g in gis.Keys)
             {
                 //f(g, gis[g]);
-                _temp[g] = _temp[g].Where(a => dic[a] == gis[g]).ToList();
+                _temp[g] = _temp[g].Where(a => dic.ContainsKey(a) && dic[a] == gis[g]).ToList();
                 log($"{g}{gis[g],3}{_temp[g].Count,6}");
             }
-            //void f(Groth g, int value) => _temp[g] = _temp[g].Where(a => r(a) == value).ToList();
-            //int r(long a)
-            //{
-            //    try { return BitConverter.ToInt32(_procLogic.ReadProcessMemory(a, 4), 0); }
-            //    catch (Exception ex)
-            //    {
-            //        log($"{ex.Message}");
-            //        return 0; 
-            //    }
-            //}
+
+            void f(Groth g, int value) => _temp[g] = _temp[g].Where(a => r(a) == value).ToList();
+            int r(IntPtr a)
+            {
+                try { return BitConverter.ToInt32(_procLogic.ReadProcessMemory(a, 4), 0); }
+                catch (Exception ex)
+                {
+                    log($"{ex.Message}");
+                    return 0;
+                }
+            }
             log("Quiting filter()...");
         }
         public void testSearch(PictureBox pbColor, PictureBox pbBw)
@@ -205,7 +212,7 @@ namespace NFT.NavyReader
             filter(_acts);
         }
 
-        void findAddress()
+        public void FindAddress()
         {
             log("Starting findAddress()...");
             WindowLogic.WindowToFront(_procLogic.Process);
@@ -222,7 +229,7 @@ namespace NFT.NavyReader
             Thread.Sleep(100);
             _runCounter = 0;
 
-            while (_runCounter++ < 10)
+            while (_runCounter++ < 15)
             {
                 Thread.Sleep(1000);
                 try { read(); }
@@ -247,8 +254,8 @@ namespace NFT.NavyReader
                     _sb.Clear();
                     foreach (var g in _temp.Keys)
                     {
-                        _address[g] = _temp[g].First();
-                        _sb.Append($"{g}= 0x{_address[g],8:X}\n");
+                        _address[g] = _temp[g].Last();
+                        _sb.Append($"{g}= 0x{_address[g].ToString("X")}\n");
                     }
                     log(_sb.ToString());
                     saveAddress();
@@ -259,7 +266,7 @@ namespace NFT.NavyReader
             }
             log("Quiting findAddress()...");
         }
-        
+
         public void ChangeValue()
         {
 
@@ -282,7 +289,7 @@ namespace NFT.NavyReader
             }
             else _address = new GA();
         }
-       
+
         #endregion
 
 
@@ -326,6 +333,8 @@ namespace NFT.NavyReader
         (int w, int h) _imgSize;
         void run()
         {
+            _logFile = $"{DateTime.Now:yyMMdd.HHmmss}_{_logFileBase}";
+
             log("Starting run()...");
             Thread.Sleep(100);
             WindowLogic.WindowToFront(_procLogic.Process);
@@ -352,16 +361,17 @@ namespace NFT.NavyReader
                 WindowLogic.WindowToFront(_procLogic.Process);
 
                 if (!_running) break;
-                Thread.Sleep(delay + random.Next(0, 700));
+                //Thread.Sleep(delay + random.Next(0, delay));
+                Thread.Sleep(delay);
 
                 try
                 {
-                    read();
-                    //readMemory();
+                    //read();
+                    readMemory();
                 }
                 catch (Exception ex)
                 {
-                    log(ex.Message);
+                    //log(ex.Message);
                     //break;//*************************************************************************
                     SendKeys.SendWait("{ESC}");
                     click(_newButton);
@@ -461,6 +471,7 @@ namespace NFT.NavyReader
             _sb.Append($"[{_runCounter,5}]");
             foreach (var n in _acts.Values) _sb.Append($"{n,03:D2}");
             log(_sb.ToString());
+            File.AppendAllText(_savingLog, $"[{DateTime.Now:yyMMdd.HHmmss.f}] {_sb}\n");
 
             var kp = new KeysPlayer(_nameKeys[g]);
             kp.Start();

@@ -20,7 +20,9 @@ namespace NFT.NavyReader
     using EMA = MemoryAllocationType;
     using SI = SYSTEM_INFO;
     //using MI = MEMORY_BASIC_INFORMATION;
-    using MI = MEMORY_BASIC_INFORMATION64;
+    using MI32 = MEMORY_BASIC_INFORMATION32;
+    using MI64 = MEMORY_BASIC_INFORMATION64;
+    using MI = MMEMORY_BASIC_INFORMATION;
 
     [Flags]
     public enum ProcessAccessFlags : uint
@@ -45,7 +47,8 @@ namespace NFT.NavyReader
         WRITE_OWNER = 0x00080000,
         SYNCHRONIZE = 0x00100000,
     }
-    public struct SYSTEM_INFO
+    [StructLayout(LayoutKind.Sequential)]
+    struct SYSTEM_INFO
     {
         public ushort processorArchitecture;
         ushort reserved;
@@ -59,33 +62,47 @@ namespace NFT.NavyReader
         public ushort processorLevel;
         public ushort processorRevision;
     }
-    public struct MEMORY_BASIC_INFORMATION
+    [StructLayout(LayoutKind.Sequential)]
+    struct MEMORY_BASIC_INFORMATION32
     {
-        public int BaseAddress;
-        public int AllocationBase;
-        public int AllocationProtect;
-        public int RegionSize;   // size of the region allocated by the program
+        public uint BaseAddress;
+        public uint AllocationBase;
+        public uint AllocationProtect;
+        public uint RegionSize;   // size of the region allocated by the program
         public EMA State;   // check if allocated (MEM_COMMIT)
         public EMP Protect; // page protection (must be PAGE_READWRITE)
-        public int lType;
-        public static uint Size = (uint)Marshal.SizeOf<MEMORY_BASIC_INFORMATION>();
+        public uint lType;
+        public static uint Size = (uint)Marshal.SizeOf<MI32>();
     }
-    public struct MEMORY_BASIC_INFORMATION64
+    [StructLayout(LayoutKind.Sequential)]
+    struct MEMORY_BASIC_INFORMATION64
     {
-        public long BaseAddress;
-        public long AllocationBase;
+        public ulong BaseAddress;
+        public ulong AllocationBase;
         public int AllocationProtect;
         public int __alignment1;
-        public long RegionSize;
+        public ulong RegionSize;
         public EMA State;
         public EMP Protect;
         public int Type;
         public int __alignment2;
-        public static uint Size = (uint)Marshal.SizeOf<MEMORY_BASIC_INFORMATION64>();
+        public static uint Size = (uint)Marshal.SizeOf<MI64>();
+    }
+    [StructLayout(LayoutKind.Explicit)]
+    public struct MMEMORY_BASIC_INFORMATION
+    {
+        [FieldOffset(0)] internal MI32 mi32;
+        [FieldOffset(0)] internal MI64 mi64;
+        public EMA State => Is32 ? mi32.State : mi64.State;
+        public EMP Protect => Is32 ? mi32.Protect : mi64.Protect;
+        public uint RegionSize => Is32 ? mi32.RegionSize : (uint)mi64.RegionSize;
+        public IntPtr BaseAddress => Is32 ? (IntPtr)mi32.BaseAddress : (IntPtr)mi64.BaseAddress;
+        public static bool Is32 = IntPtr.Size == 4;
+        public static uint Size = Is32 ? MI32.Size : MI64.Size;
     }
 
 
-    public enum MemoryProtectionType : int
+    public enum MemoryProtectionType : uint
     {
         PAGE_NOACCESS = 0x01,
         PAGE_READONLY = 0x02,
@@ -100,7 +117,7 @@ namespace NFT.NavyReader
         PAGE_NOCACHE = 0x200,
         PAGE_WRITECOMBINE = 0x400
     }
-    public enum MemoryAllocationType : int
+    public enum MemoryAllocationType : uint
     {
         MEM_COMMIT = 0x00001000,
         MEM_RESERVE = 0x00002000,
@@ -115,7 +132,7 @@ namespace NFT.NavyReader
 
     class ProcessLogic : IDisposable
     {
-        (IntPtr min, IntPtr max) _appAddressRange;
+        (IntPtr min, IntPtr max) _appAddress;
         SI _si;
 
         Process _process;
@@ -126,17 +143,18 @@ namespace NFT.NavyReader
         public ProcessLogic(string processName)
         {
             _si = GetSystemInfo();
-            _appAddressRange = (_si.minimumApplicationAddress, _si.maximumApplicationAddress);
+            _appAddress = (_si.minimumApplicationAddress, _si.maximumApplicationAddress);
 
             _process = Process.GetProcessesByName(processName).First();
             _handle = OpenProcess(EPA.All, false, _process.Id);
             //_handle = OpenProcess(EPA.PROCESS_VM_READ | EPA.PROCESS_QUERY_INFORMATION, false, _process.Id);
+            _isWow64 = IsWow64();
         }
         public void Dispose()
         {
             if (_handle != null) CloseHandle(_handle);
         }
-
+        bool _isWow64;
         public override string ToString()
             => $"ProcessName= {_process.ProcessName}, ProcessHandle= {_handle}, MainWindowHandle= {_process.MainWindowHandle}";
 
@@ -144,15 +162,11 @@ namespace NFT.NavyReader
         static extern IntPtr OpenProcess(EPA processAccess, bool bInheritHandle, int processId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out int lpNumberOfBytesRead);
-        public byte[] ReadProcessMemory(long address, int size)
+        static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, uint dwSize, out int lpNumberOfBytesRead);
+        public byte[] ReadProcessMemory(IntPtr address, uint size)
         {
             byte[] buffer = new byte[size];
-            var ipAddress = (IntPtr)address;
-
-            //if (address > int.MaxValue) ;
-
-            var result = ReadProcessMemory(_handle, ipAddress, buffer, size, out var numBytes);
+            var result = ReadProcessMemory(_handle, address, buffer, size, out var numBytes);
             if (!result || numBytes != size)
                 throw new Exception($"ReadProcessMemory(0x{address:X}) failed: numBytes={numBytes}, error code={Marshal.GetLastWin32Error()}");
             return buffer;
@@ -173,74 +187,77 @@ namespace NFT.NavyReader
             return si;
         }
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, ref MI lpBuffer, uint dwLength);
-        public MI VirtualQuery(long address)
+        [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "VirtualQueryEx")]
+        static extern int VirtualQueryEx32(IntPtr hProcess, IntPtr lpAddress, ref MI32 lpBuffer, uint dwLength);
+        [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "VirtualQueryEx")]
+        static extern int VirtualQueryEx64(IntPtr hProcess, IntPtr lpAddress, ref MI64 lpBuffer, uint dwLength);
+        public MI VirtualQuery(IntPtr address)
         {
             var mi = new MI();
-            var result = VirtualQueryEx(_handle, (IntPtr)address, ref mi, MI.Size);
-            if (result == 0) throw new Exception($"VirtualQueryEx() failed: error code={Marshal.GetLastWin32Error()}"); ;
+            var result = MI.Is32 ? VirtualQueryEx32(_handle, address, ref mi.mi32, MI.Size) : VirtualQueryEx64(_handle, address, ref mi.mi64, MI.Size);
+            if (result == 0) throw new Exception($"VirtualQueryEx{(MI.Is32 ? "32" : "64")}() failed: error code={Marshal.GetLastWin32Error()}");
             return mi;
         }
-
-        public List<long> Search(int value)
+        public List<IntPtr> Search(int value)
         {
-            var address = new List<long>();
-            long min = (long)_appAddressRange.min;
-            long max = (long)_appAddressRange.max;
+            var address = new List<IntPtr>();
+            long min = (long)_appAddress.min;
+            long max = (long)_appAddress.max;
             while (min < max)
             {
-                var mi = VirtualQuery(min);
+                var mi = VirtualQuery((IntPtr)min);
                 if (min % 4 != 0) throw new Exception($"min %4 != 0");
                 if (mi.RegionSize % 4 != 0) throw new Exception($"mi.RegionSize %4 != 0");
                 if ((mi.Protect == EMP.PAGE_READWRITE) && mi.State == EMA.MEM_COMMIT)//PAGE_EXECUTE_READWRITE
                 //if ((mi.Protect == EMP.PAGE_EXECUTE_READWRITE || mi.Protect == EMP.PAGE_READWRITE ) && mi.State == EMA.MEM_COMMIT)//PAGE_EXECUTE_READWRITE
                 //if (mi.State == EMA.MEM_COMMIT)
                 {
-                    var buffer = ReadProcessMemory(mi.BaseAddress, (int)mi.RegionSize);
-                    var loop = mi.RegionSize / 4;
-                    for (int i = 0; i < loop; i += 4) if (BitConverter.ToInt32(buffer, i) == value) address.Add(min + i);
+                    var buffer = ReadProcessMemory(mi.BaseAddress, mi.RegionSize);
+                    var loop = (int)mi.RegionSize / 4;
+                    for (int i = 0; i < loop; i += 4) if (BitConverter.ToInt32(buffer, i) == value) address.Add((IntPtr)(min + i));
                 }
                 min += mi.RegionSize;
             }
             return address;
         }
-
-        public Dictionary<long, int> ReadAll()
+        public Dictionary<IntPtr, int> ReadAll()
         {
-            var address = new List<long>();
-            var values = new List<int>();
-            var dic = new Dictionary<long, int>();
+            var dic = new Dictionary<IntPtr, int>();
 
-            long min = (long)_appAddressRange.min;
-            long max = (long)_appAddressRange.max;
-            //long min = 0x0;// (long)_appAddressRange.min;
+            //long min = (long)_appAddress.min;
+            long max = _isWow64 ? 0xFFFFFFFF : (long)_appAddress.max;
+            long min = 0x0;// (long)_appAddressRange.min;
             //long max = 0xffffffff;// (long)_appAddressRange.max;
-            var total = 0L;
             while (min < max)
             {
-                var mi = VirtualQuery(min);
-                if (mi.RegionSize % 4 != 0) throw new Exception($"mi.RegionSize %4 != 0");
-                if ((mi.Protect == EMP.PAGE_READWRITE) && mi.State == EMA.MEM_COMMIT)//PAGE_EXECUTE_READWRITE
-                //if (mi.Protect == EMP.PAGE_EXECUTE_READWRITE || mi.Protect == EMP.PAGE_NOCACHE)//PAGE_EXECUTE_READWRITE
-                //if (mi.State == EMA.MEM_COMMIT)
+                var isRW = false;
+                var mi = VirtualQuery((IntPtr)min);
+                isRW = (mi.Protect == EMP.PAGE_READWRITE || mi.Protect == EMP.PAGE_READONLY) && mi.State == EMA.MEM_COMMIT;
+
+                if (isRW)
                 {
-                    var buffer = ReadProcessMemory(mi.BaseAddress, (int)mi.RegionSize);
-                    total += mi.RegionSize;
+                    var buffer = ReadProcessMemory(mi.BaseAddress, mi.RegionSize);
                     var loop = mi.RegionSize / 4;
                     for (int i = 0; i < loop; i += 4)
                     {
-                        //Array.Reverse(buffer, 0, 4);
-                        dic[min + i] = BitConverter.ToInt32(buffer, i);
+                        dic[(IntPtr)(min + i)] = BitConverter.ToInt32(buffer, i);
                         //dic[min + i] = (int)BitConverter.ToUInt32(buffer, i);
-                        //address.Add(min + i);
-                        //values.Add(BitConverter.ToInt32(buffer, i));
                     }
                 }
                 min += mi.RegionSize;
             }
             return dic;// (address, values);
         }
-    
+
+
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool IsWow64Process([In] IntPtr processHandle, [Out, MarshalAs(UnmanagedType.Bool)] out bool wow64Process);
+        bool IsWow64()
+        {
+            if (!IsWow64Process(_handle, out bool is64)) throw new Exception($"IsWow64Process() failed: error code={Marshal.GetLastWin32Error()}");
+            return is64;
+        }
+
     }
 }
