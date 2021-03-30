@@ -103,6 +103,5 @@ namespace WindowsFormsApp1
             ((HandledMouseEventArgs)e).Handled = true;
         }
 
-        
     }
 }
