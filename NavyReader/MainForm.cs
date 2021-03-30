@@ -16,11 +16,21 @@ namespace NFT.NavyReader
         KeyboardHotkey _hook;
         public MainForm()
         {
-            InitializeComponent();            
+            InitializeComponent();
             try
             {
                 _app = new AppLogic(log);
-
+            }
+            catch (Exception ex)
+            {
+                log(ex);
+            }
+        }
+        protected override void OnLoad(EventArgs e)
+        {
+            try
+            {
+                base.OnLoad(e);
                 initHotkey();
                 initNames();
                 initSels();
@@ -45,22 +55,31 @@ namespace NFT.NavyReader
 
         void initHotkey()
         {
+            var keys = new[] { Keys.F1, Keys.F2, Keys.F3, Keys.F4, Keys.F5, Keys.F6, Keys.F7, Keys.F12 };
             _hook = new KeyboardHotkey();
             _hook.KeyPressed += new EventHandler<KeyPressedEventArgs>(HotKeyPressed);
-            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F1);
-            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F2);
-            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F3);
-            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F4);//TEST
-            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F5);//TEST
-            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F6);//TEST
-            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F7);//TEST
-            _hook.RegisterHotKey(_ModifierKeys.Control, Keys.F12);//TEST
+
+            register(1, "run");
+            register(2, "load ocr image");
+            register(3);//test
+            register(4);
+            register(5);
+            register(6);
+            register(7);
+            register(12);
+
+            void register(int i, object msg = null)
+            {
+                var key = (Keys)((int)Keys.F1 + i - 1);
+                _hook.RegisterHotKey(_ModifierKeys.Control, key);
+                log($"Hotkey registered : ^{key} := {msg ?? "-test-"}");
+            }
         }
         async void HotKeyPressed(object sender, KeyPressedEventArgs e)
         {
             try
             {
-                log($"Hotkey: {e.Modifier} + {e.Key}");
+                log($"Hotkey pressed: {e.Modifier} + {e.Key}");
                 if (e.Key == Keys.F1)
                 {
                     splitContainer2.Panel2Collapsed = true;
@@ -73,13 +92,6 @@ namespace NFT.NavyReader
                     splitContainer2.Panel2Collapsed = false;
                     splitContainer2.SplitterDistance = 600;
                     Height = 1200;
-                    _app.TestOcr(uiPicture, uiPicture2);
-                }
-                if (e.Key == Keys.F3)
-                {
-                    splitContainer2.Panel2Collapsed = false;
-                    splitContainer2.SplitterDistance = 600;
-                    Height = 1200;
                     var fd = new OpenFileDialog();
                     fd.Filter = "Iamge|*.bmp;*.png;*.jpg";
                     if (fd.ShowDialog() == DialogResult.OK)
@@ -87,6 +99,13 @@ namespace NFT.NavyReader
                         log($"Loading file: {fd.FileName}");
                         _app.TestOcr2(fd.FileName, uiPicture, uiPicture2);
                     }
+                }
+                if (e.Key == Keys.F3)
+                {
+                    splitContainer2.Panel2Collapsed = false;
+                    splitContainer2.SplitterDistance = 600;
+                    Height = 1200;
+                    _app.TestOcr(uiPicture, uiPicture2);
                 }
                 if (e.Key == Keys.F4)
                 {
@@ -138,7 +157,7 @@ namespace NFT.NavyReader
                 _names[i].TabIndex = 1 + i;
                 _names[i].Tag = (Groth)i;
                 _names[i].MouseClick += uiName_MouseClick;
-                _names[i].Text = _app.GetNameText((Groth)i);
+                _names[i].Text = _app?.GetNameText((Groth)i);
             }
         }
         private async void uiName_MouseClick(object sender, MouseEventArgs e)
@@ -172,7 +191,7 @@ namespace NFT.NavyReader
             {
                 _sels[i].TabIndex = 13 + i;
                 _sels[i].Tag = (Groth)i;
-                _sels[i].Checked = _app.GetSel((Groth)i);
+                _sels[i].Checked = _app?.GetSel((Groth)i) ?? false;
             }
         }
         void saveSels()
@@ -231,6 +250,6 @@ namespace NFT.NavyReader
         }
 
         #endregion
-    
+
     }
 }

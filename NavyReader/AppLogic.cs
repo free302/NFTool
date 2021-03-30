@@ -40,6 +40,7 @@ namespace NFT.NavyReader
             loadAddress();
             loadNames();
             loadSels();
+
             initProcess();
         }
         void log(object msg)
@@ -158,8 +159,16 @@ namespace NFT.NavyReader
         GA _address;
         void initProcess()
         {
-            _procLogic = new ProcessLogic(_processName);
-            log(_procLogic);
+            try
+            {
+                _procLogic = new ProcessLogic(_processName);
+                log(_procLogic);
+            }
+            catch (Exception)
+            {
+                log($"프로세스 열기 실패: process name = '{_processName}'");
+                //log(ex);
+            }
         }
 
         Dictionary<Groth, List<IntPtr>> _temp = new Dictionary<Groth, List<IntPtr>>();
@@ -334,6 +343,11 @@ namespace NFT.NavyReader
         void run()
         {
             _logFile = $"{DateTime.Now:yyMMdd.HHmmss}_{_logFileBase}";
+            if (_procLogic == null)
+            {
+                log("ProcessLogic이 초기화되지 않았습니다.");
+                return;
+            }
 
             log("Starting run()...");
             Thread.Sleep(100);
