@@ -1,4 +1,4 @@
-# NFTool
+## NavyReader
 ### 기능
 - NavyField 게임에서 수병 모집을 자동화
 - 특성 및 기준값을 json 파일로 입력 (실행시 자동 로드)
