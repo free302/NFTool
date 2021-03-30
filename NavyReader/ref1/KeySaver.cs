@@ -25,11 +25,6 @@ namespace NFT.NavyReader.ref1
             watch = new Stopwatch();
         }
 
-        /*
-         * method Start()
-         * Description : starts to save the keyboard inputs.
-         * See : https://msdn.microsoft.com/en-us/library/windows/desktop/ms644990%28v=vs.85%29.aspx
-         */
         public void Start(Process process)
         {
             _keys.Clear();
@@ -37,19 +32,14 @@ namespace NFT.NavyReader.ref1
             using (ProcessModule curModule = process.MainModule) // Get the actual thread
             {
                 // Installs a hook to the keyboard (the "13" params means "keyboard", see the link above for the codes), by saying "Hey, I want the function 'onActivity' being called at each activity. You can find this function in the actual thread (GetModuleHandle(curModule.ModuleName)), and you listen to the keyboard activity of ALL the treads (code : 0)
-                this.hookId = SetWindowsHookEx(13, onActivity, GetModuleHandle(curModule.ModuleName), 0);
+                hookId = SetWindowsHookEx(13, onActivity, GetModuleHandle(curModule.ModuleName), 0);
             }
             watch.Start(); // Starts the timer
         }
 
-        /*
-         * method Stop()
-         * Description : stops to save the keyboard inputs.
-         * Returns : the recorded keys activity since Start().
-         */
         public KL Stop()
         {
-            this.watch.Stop(); // Stops the timer
+            watch.Stop(); // Stops the timer
             UnhookWindowsHookEx(this.hookId); //Uninstalls the hook of the keyboard (the one we installed in Start())
             return _keys;
         }
@@ -67,8 +57,8 @@ namespace NFT.NavyReader.ref1
         {
             if (nCode >= 0) //We check the validity of the informations. If >= 0, we can use them.
             {
-                int vkCode = Marshal.ReadInt32(lParam); //We read the value associated with the pointer (?)
-                Keys key = (Keys)vkCode; //We convert the int to the Keys type
+                int vkCode = Marshal.ReadInt32(lParam);//read Virtual-Key Code
+                Keys key = (Keys)vkCode; //convert the vk to Keys type
                 _keys.Add((key, wParam));
             }
             return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam); //Bubbles the informations for others applications using similar hooks
